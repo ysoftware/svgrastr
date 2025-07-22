@@ -1,35 +1,68 @@
 #import "Basic";
+#import "Command_Line";
 #import "stb_image_write";
 
 nanosvg :: #library,no_dll "../.build/libnanosvg";
 
-nsvgParseFromFile :: (filename: *u8, units: *u8, dpi: float) -> *void #foreign nanosvg;
-nsvgCreateRasterizer :: () -> *void #foreign nanosvg;
-nsvgRasterize :: (r: *void, image: *void, tx: float, ty: float, scale: float, dst: *u8, width: int, height: int, stride: int) #foreign nanosvg;
+NSVGimage :: struct {
+    width: float;
+    height: float;
+    shapes: *void;
+}
+
+NSVGrasterizer :: *void;
+
+nsvgParseFromFile :: (filename: *u8, units: *u8, dpi: float) -> *NSVGimage #foreign nanosvg;
+nsvgCreateRasterizer :: () -> NSVGrasterizer #foreign nanosvg;
+nsvgRasterize :: (r: *NSVGrasterizer, image: *void, tx: float, ty: float, scale: float, dst: *u8, width: int, height: int, stride: int) #foreign nanosvg;
+nsvgDelete :: (image: *NSVGimage) #foreign nanosvg;
+nsvgDeleteRasterizer :: (r: *NSVGrasterizer) #foreign nanosvg;
+
+Arguments :: struct {
+    i: string; @"?SVG input file path"
+    o: string; @"?PNG output file path"
+    w: s32; @"?Output file width"
+    h: s32; @"?Output file height"
+}
 
 main :: () {
-    width :: 1024;
-    height :: 1024;
-    file_name :: "assets/cog.svg";
-    output_file_name :: "cog.png";
+    _, args, is_set, _ := parse_arguments(Arguments, Argument_Flags.ALIGN_HELP);
+    if (!is_set.i) { print("Missing -i for SVG input file path\n"); exit(1); }
+    if (!is_set.o) { print("Missing -o for PNG output file path\n"); exit(1); }
+    if (!is_set.w) { print("Missing -w for output image width\n"); exit(1); }
+    if (!is_set.h) { print("Missing -h for output image height\n"); exit(1); }
+
+    file_name := args.i;
+    output_file_name := args.o;
+    width := args.w;
+    height := args.h;
+
     units :: "px";
     dpi : float : 96;
-
     image := nsvgParseFromFile(file_name.data, "px".data, dpi);
+
     if (image == null) {
         print("Could not load image.\n");
         exit(1);
     }
-    print("Image loaded: %\n", file_name);
 
     pixels := alloc(width*height*4);
+    memset(pixels, 255, width*height*4);
 
     rasterizer := nsvgCreateRasterizer();
-    nsvgRasterize(rasterizer, image, 0, 0, 1, pixels, width, height, width*4);
 
-    result := stbi_write_png(output_file_name, width, height, 4, pixels, width*4);
-    if (result != 0) print("Image written: %\n", output_file_name);
-    else print("stbi_write_png result: %\n", result);
+    scale_x := width / image.width;
+    scale_y := height / image.height;
+    scale := ifx scale_x < scale_y scale_x else scale_y;
+    nsvgRasterize(rasterizer, image, 0, 0, scale, pixels, xx image.width, xx image.height, width*4);
+    nsvgDeleteRasterizer(rasterizer);
 
-    // TODO: clean up
+    result := stbi_write_png(output_file_name.data, width, height, 4, pixels, width*4);
+    nsvgDelete(image);
+
+    if (result != 0) {
+        print("File written: %\n", output_file_name);
+    } else {
+        print("Image successfully loaded, but failed to convert.\n");
+    }
 }

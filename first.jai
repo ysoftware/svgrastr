@@ -6,7 +6,7 @@ build_nanosvg :: () {
     result := run_command("cc", "-Iinclude", "-c", "src/nanosvg.c", "-o", ".build/nanosvg.o");
     print("run command cc: exit code %\n", result.exit_code);
 
-    result = run_command("ar", "rcs", ".build/nanosvg.a", ".build/nanosvg.o");
+    result = run_command("ar", "rcs", ".build/libnanosvg.a", ".build/nanosvg.o");
     print("run command ar: exit code %\n", result.exit_code);
 }
 
