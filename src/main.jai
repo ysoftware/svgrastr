@@ -47,13 +47,17 @@ main :: () {
     }
 
     pixels := alloc(width*height*4);
-    memset(pixels, 255, width*height*4);
 
     rasterizer := nsvgCreateRasterizer();
 
     scale_x := width / image.width;
     scale_y := height / image.height;
     scale := ifx scale_x < scale_y scale_x else scale_y;
+
+    // TODO: upscaling seems to be broken
+    // TODO: image will not be centered when input/output image is not square
+
+    print("scaling image: %\n", scale);
     nsvgRasterize(rasterizer, image, 0, 0, scale, pixels, xx image.width, xx image.height, width*4);
     nsvgDeleteRasterizer(rasterizer);
 
