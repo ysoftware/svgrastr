@@ -3,7 +3,9 @@
 #import "Process";
 
 build_nanosvg :: () {
-    result := run_command("cc", "-Iinclude", "-c", "src/nanosvg.c", "-o", ".build/nanosvg.o");
+    result := run_command("mkdir", ".build");
+
+    result = run_command("cc", "-Iinclude", "-c", "src/nanosvg.c", "-o", ".build/nanosvg.o");
     print("run command cc: exit code %\n", result.exit_code);
 
     result = run_command("ar", "rcs", ".build/libnanosvg.a", ".build/nanosvg.o");
@@ -11,7 +13,6 @@ build_nanosvg :: () {
 }
 
 build :: () {
-    set_build_options_dc(.{do_output=false});
     executable_builder_workspace := compiler_create_workspace("svgrastr executable");
 
     options := get_build_options();
@@ -25,6 +26,7 @@ build :: () {
 #run main();
 
 main :: () {
+    set_build_options_dc(.{do_output=false});
     build_nanosvg();
     build();
 }
