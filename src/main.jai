@@ -2,6 +2,7 @@
 #import "Command_Line";
 #import "stb_image_write";
 
+lm :: #library,system,link_always "m";
 nanosvg :: #library,no_dll "../.build/libnanosvg";
 
 NSVGimage :: struct {
